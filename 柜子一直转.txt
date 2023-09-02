@@ -1,0 +1,142 @@
+_G.spinSpeed = 1
+
+local plr = game.Players.LocalPlayer
+local char = plr.Character or plr.CharacterAppearanceLoaded:Wait()
+local hrp = char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("Collision") or char:FindFirstChildOfClass("BasePart")
+local spinningAttachments = {}
+local mainAttachment = Instance.new("Attachment",hrp)
+mainAttachment.Name = "MainAttachment"
+for i=1, 10 do
+	local spinningAttachment = Instance.new("Attachment",mainAttachment)
+	spinningAttachments[#spinningAttachments+1] = spinningAttachment
+	spinningAttachment.Position = Vector3.new(0,-2,0)
+	spinningAttachment:SetAttribute("i",i)
+end
+for _,spinningAttachment in pairs(spinningAttachments) do
+	local i = spinningAttachment:GetAttribute("i")
+	coroutine.wrap(function()
+		local rot = 0
+		while true do
+			spinningAttachment.Orientation = Vector3.new(0,rot,0)
+			rot += (tonumber(_G.spinSpeed) ~= nil and tonumber(_G.spinSpeed) or 1)*(5/i)
+			if rot == 360 or rot >= 360 then
+				rot = 0
+			end
+			task.wait(0)
+		end
+		spinningAttachment:Destroy()
+	end)()
+end
+function isnumber(a)
+	a = tostring(a)
+	return tonumber(a) ~= nil or a == "inf" or a == "-inf" or a == "nan"
+end
+function rs(times)
+	local times = times or 1
+	if times == 0 or times <= 0 then
+		times = 1
+	end
+	times = (times-1)*game["Run Service"].RenderStepped:Wait()
+	if math.floor(times) == 0 then
+		times = 1
+	end
+	for i=1,times do
+		game["Run Service"].RenderStepped:Wait()
+	end
+end
+function tornadoo(d)
+	if not d or not d:IsA("BasePart") then return end
+	d.Massless = true
+	d.CanTouch = false
+	coroutine.wrap(function()
+		if d and d:IsDescendantOf(workspace) then
+			local spinAttachment = Instance.new("Attachment",spinningAttachments[math.random(1,#spinningAttachments)])
+			spinAttachment.Position = Vector3.new(math.random(1,2) == 1 and 5 or -5,math.random(0,100)/10,math.random(1,2) == 1 and 5 or -5)
+			spinAttachment.Position -= Vector3.new(0,0,spinAttachment.Position.Y*2)
+			local holderAttachment = Instance.new("Attachment",d)
+			holderAttachment.Orientation = Vector3.new(math.random(-179,179),math.random(-179,179),math.random(-179,179))
+			local aP = Instance.new("AlignPosition",d)
+			aP.Attachment1 = spinAttachment
+			aP.Attachment0 = holderAttachment
+			aP.MaxForce = 50
+			aP.Responsiveness = 50
+			aP.ApplyAtCenterOfMass = true
+			local aO = Instance.new("AlignOrientation",d)
+			aO.Attachment1 = aP.Attachment1
+			aO.Attachment0 = aP.Attachment0
+			local rotVector = Vector3.new(math.random(-10,10),math.random(-10,10),math.random(-10,10))
+			coroutine.wrap(function()
+				repeat
+					rotVector += Vector3.new(math.random(-100,100)/5000,math.random(-100,100)/5000,math.random(-100,100)/5000)
+					holderAttachment.Orientation -= rotVector
+					rs(1)
+				until not d or not d:IsDescendantOf(workspace)
+				rs(1)
+				spinAttachment:Destroy()
+				if d then
+					aP:Destroy()
+					aO:Destroy()
+				end
+			end)()
+		end
+	end)()
+end
+function descendant(d)
+	coroutine.wrap(function()
+		if d then
+			if d:IsA("BasePart") then
+				rs(5)
+				if d.Name == "Door" and d.Parent.Name == "DoorSet" then
+					rs(1)
+					tornadoo(d)
+				end
+				if d.Name == "Door" and d.Parent.Name == "DoorNormal" then
+					rs(1)
+					tornadoo(d)
+				end
+				if d.Name == "BananaPeel" then
+					rs(1)
+					tornadoo(d)
+				end
+			end
+			if d:IsA("Folder") then
+				rs(5)
+				if d.Name == "FigureSetup" then
+					for i,v in pairs(d:GetDescendants()) do
+						tornadoo(d)
+					end
+				end
+			end
+			if d:IsA("Model") and not d:IsA("Tool") then
+				if d.Name == "JeffTheKiller" or d.Name == "Jeff the killer" then
+					rs(1)
+					for i,v in pairs(d:GetDescendants()) do
+						tornadoo(d)
+					end
+				end
+                if d.Name == "DrawerContainer" then
+					rs(1)
+					tornadoo(d:WaitForChild("Main"))
+				end
+				if d.Name == "Door" and isnumber(d.Parent.Name) then
+					rs(1)
+					tornadoo(d:WaitForChild("Door"))
+				end
+			end
+			if d:IsA("PrismaticConstraint") or d:IsA("HingeConstraint") then
+				rs(1)
+				d:Destroy()
+			end
+		end
+	end)()
+end
+for i,v in pairs(workspace:GetDescendants()) do
+	descendant(v)
+end
+workspace.DescendantAdded:Connect(descendant)
+print("Success!")
+game["Run Service"].RenderStepped:Connect(function()
+	mainAttachment.WorldOrientation = Vector3.new()
+end)
+    print("hi")
+end)
